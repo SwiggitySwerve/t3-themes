@@ -1,19 +1,28 @@
 
 /* ---- Nyx · Aurora Ocean (Full): every effect, at full smoothness ----
-   Appended after nyx-aurora-ocean.css and the ocean. Puts back what the
-   Balanced and Speed builds leave out to stay light on the GPU, and runs the
-   sky unstepped (at the display's rate):
+   Appended after nyx-aurora-ocean.css, full-baked.css (gen_full.py, which
+   takes the place of glow.css) and the ocean. Puts back what the Balanced
+   and Speed builds leave out to stay light on the GPU, and runs the sky
+   unstepped (at the display's rate):
    - the local flares on the nebula (sidebar-gap::before and ::after)
-   - the glow's hue drift and screen blending
-   - the sky's brightness breathe, which goes above full brightness
-   On a 3440x1440 window with an Intel iGPU this keeps the GPU close to busy;
-   pick Balanced or Speed on smaller GPUs. */
+   - the glow's hue drift (baked into its image by gen_full.py) and screen
+     blending
+   - the sky's brightness breathe, which goes above full brightness (also
+     baked, see gen_full.py)
+   The sky is composited again on every display frame, so whatever each
+   frame costs counts 60 or more times a second: nothing here runs a live
+   filter, and the one blend that needs a copy of what is behind it (the
+   flares' color-dodge) is kept to the area the flares can reach. */
 
+/* Each flare layer is only as large as its spots (out to 75% of their radius,
+   where the gradients end): color-dodge copies everything behind the layer on
+   every frame, and two full-window layers cost as much as the rest of the
+   effects together. Positions and offsets are in vw/vh so the layers draw
+   exactly what full-window layers would. */
 .dark [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-gap"]::before,
 .dark [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-gap"]::after {
   content: "";
   position: fixed;
-  inset: 0;
   z-index: -1;
   pointer-events: none;
   will-change: transform, opacity;
@@ -27,55 +36,44 @@
 /* Two spots per layer (four on B) sit on the purple band. Each layer flares,
    then drifts down the band and fades, on its own coprime period, so
    different parts of the cloud light up at different times. The flares paint
-   between the glow and the stars, in document order. */
+   between the glow and the stars, in document order. transform-origin is the
+   middle of the window, as it was for full-window layers. */
 .dark [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-gap"]::before {
+  left: 17vw; top: 3vh; width: 41vw; height: 65vh;
+  transform-origin: 33vw 47vh;
   background-image:
-    radial-gradient(13% 11% at 48% 12%, #b0a2ffc0, #7b6cff45 45%, #0000 75%),
-    radial-gradient(11% 10% at 26% 60%, #b0a2ffa8, #7b6cff3a 45%, #0000 75%);
+    radial-gradient(13vw 11vh at 31vw 9vh, #b0a2ffc0, #7b6cff45 45%, #0000 75%),
+    radial-gradient(11vw 10vh at 9vw 57vh, #b0a2ffa8, #7b6cff3a 45%, #0000 75%);
   animation: nyx-flare 11s ease-in-out infinite;
 }
 
 .dark [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-gap"]::after {
+  /* top stays at 0: the full-window layer clipped the top spot's halo there */
+  left: 11vw; top: 0; width: 57vw; height: 79vh;
+  transform-origin: 39vw 50vh;
   background-image:
-    radial-gradient(12% 10% at 38% 33%, #e3a0ffc0, #c050e845 45%, #0000 75%),
-    radial-gradient(10% 9% at 60% 4%, #e3a0ffa8, #c050e83a 45%, #0000 75%),
-    radial-gradient(12% 11% at 31% 46%, #a8c0ffc0, #6f8cff45 45%, #0000 75%),
-    radial-gradient(10% 9% at 19% 72%, #a8c0ffa8, #6f8cff3a 45%, #0000 75%);
+    radial-gradient(12vw 10vh at 27vw 33vh, #e3a0ffc0, #c050e845 45%, #0000 75%),
+    radial-gradient(10vw 9vh at 49vw 4vh, #e3a0ffa8, #c050e83a 45%, #0000 75%),
+    radial-gradient(12vw 11vh at 20vw 46vh, #a8c0ffc0, #6f8cff45 45%, #0000 75%),
+    radial-gradient(10vw 9vh at 8vw 72vh, #a8c0ffa8, #6f8cff3a 45%, #0000 75%);
   animation: nyx-flare 14s ease-in-out -5s infinite;
 }
 
-/* the glow screen-blended, with its hue drifting; the baked image keeps its
-   darkness as transparency, which screen blending treats the same as black */
+/* the glow screen-blended; the baked image keeps its darkness as
+   transparency, which screen blending treats the same as black. Its hue
+   drifts inside the image (gen_full.py). */
 .dark [data-slot="sidebar"][data-side="left"]::before {
   mix-blend-mode: screen;
-  animation:
-    nyx-flow 36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate,
-    nyx-glow-breathe 23s ease-in-out infinite alternate,
-    nyx-hue 37s ease-in-out infinite alternate;
-}
-
-.dark [data-slot="sidebar-wrapper"]::before {
-  animation: nyx-base-breathe-full 17s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-}
-
-@keyframes nyx-base-breathe-full {
-  from { filter: brightness(0.8); }
-  to { filter: brightness(1.12); }
-}
-
-@keyframes nyx-hue {
-  from { filter: hue-rotate(-16deg); }
-  to { filter: hue-rotate(24deg); }
 }
 
 /* flare in, flicker, then drift down-left along the band while fading;
    idle (invisible) for the rest of the cycle, where the position resets */
 @keyframes nyx-flare {
-  0% { opacity: 0; transform: translate3d(2%, -2.5%, 0) scale(0.85); }
+  0% { opacity: 0; transform: translate3d(2vw, -2.5vh, 0) scale(0.85); }
   14% { opacity: 1; }
   26% { opacity: 0.45; }
   34% { opacity: 0.8; }
-  52%, 100% { opacity: 0; transform: translate3d(-2.5%, 3%, 0) scale(1.15); }
+  52%, 100% { opacity: 0; transform: translate3d(-2.5vw, 3vh, 0) scale(1.15); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -84,5 +82,9 @@
   .dark [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-gap"]::before,
   .dark [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-gap"]::after {
     animation: none !important;
+  }
+  /* the still sky uses the stock art, not the breathe's brightened copy */
+  .dark [data-slot="sidebar-wrapper"]::before {
+    background-image: var(--g), var(--a);
   }
 }
