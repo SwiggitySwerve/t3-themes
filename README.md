@@ -20,7 +20,7 @@ Motion layers on top of the [Nyx theme](https://github.com/Deepusleepy/t3-nyx-th
 
   `themes/nyx-aurora-ocean-still-sky.json` (**still sky**) is Balanced with the sky held still and only the ocean moving (~39%).
 
-  The Full figure is from before Full's hue drift and over-bright breathe were baked into images (`gen_full.py`) and its flares shrunk to the area they reach; the iGPU has not been measured since. On an RTX 3070 with a 3456x1408 window that change took Full from about 16.6% to 14.0% GPU (Balanced about 3%).
+  The Full figure is from before Full's hue drift and over-bright breathe were baked into images (`gen_full.py`) and its flares shrunk to the area they reach; the iGPU has not been measured since. On an RTX 3070 with a 3456x1408 window that change took Full from about 16.6% to 14.0% GPU, and hiding the flares while they are idle and trimming the stars layer took off about another 10% (12.6% to 11.3%, measured in a later session; Balanced about 3%).
 
 Install one with `t3 theme set themes/<file>.json` (the file name is the theme id).
 
