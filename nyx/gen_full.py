@@ -49,16 +49,11 @@ art = base64.b64decode(re.search(r"--a:\s*url\(data:image/png;base64,([A-Za-z0-9
 
 def brighten(png, k):
     """The PNG with its palette scaled by k; the pixels are untouched."""
-    out, i, seen = bytearray(png[:8]), 8, False
-    while i < len(png):
-        n, typ = struct.unpack(">I4s", png[i:i + 8])
-        data = png[i + 8:i + 8 + n]
-        if typ == b"PLTE":
-            data, seen = bytes(min(255, round(c * k)) for c in data), True
-        out += struct.pack(">I", n) + typ + data + struct.pack(">I", zlib.crc32(typ + data))
-        i += 12 + n
-    assert seen, "the sky art is no longer an indexed PNG"
-    return bytes(out)
+    i = png.find(b"PLTE") - 4
+    assert i > 0, "the sky art is no longer an indexed PNG"
+    n = struct.unpack(">I", png[i:i + 4])[0]
+    pal = bytes(min(255, round(c * k)) for c in png[i + 8:i + 8 + n])
+    return png[:i + 8] + pal + struct.pack(">I", zlib.crc32(b"PLTE" + pal)) + png[i + 12 + n:]
 
 
 glow_uri = re.search(r"url\((data:image/webp;base64,[A-Za-z0-9+/=]+)\)",
