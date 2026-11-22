@@ -7,8 +7,10 @@ Nyx · Aurora Ocean comes in three tiers that trade smoothness and detail for
 GPU time (numbers are Task Manager GPU for T3 Code on a 3440x1440 window with
 an Intel iGPU):
 - nyx-aurora-ocean-full (Full): every effect (full.css adds the flares, the
-  glow's hue drift and screen blend, and the over-bright sky breathe), the sky
-  unstepped, the ocean at full resolution and 24 fps
+  glow's hue drift and screen blend, and the over-bright sky breathe; the
+  drift and the breathe are baked into images by gen_full.py, whose glow
+  replaces glow.css), the sky unstepped, the ocean at full resolution and
+  24 fps
 - nyx-aurora-ocean (Balanced): no flares or hue drift, the sky stepped at
   10 fps, the ocean at half resolution and 20 fps
 - nyx-aurora-ocean-speed (Speed): as Balanced, with the sky at 8 fps and the
@@ -61,8 +63,11 @@ def sky(tier):
 
 AURORA = ["nyx-aurora-ocean.css", "glow.css", "teal-stream.css"]
 oceans = {tier: ocean(tier) for tier in TIERS}
+full_baked = os.path.join(OUT, "full-baked.css")
+run("gen_full.py", full_baked)
 for theme_id, name, flags, css in [
-    ("nyx-aurora-ocean-full", "Nyx · Aurora Ocean (Full)", sky("full"), [*AURORA, oceans["full"], "full.css"]),
+    ("nyx-aurora-ocean-full", "Nyx · Aurora Ocean (Full)", sky("full"),
+     ["nyx-aurora-ocean.css", full_baked, "teal-stream.css", oceans["full"], "full.css"]),
     ("nyx-aurora-ocean", "Nyx · Aurora Ocean (Balanced)", sky("balanced"), [*AURORA, oceans["balanced"]]),
     ("nyx-aurora-ocean-speed", "Nyx · Aurora Ocean (Speed)", sky("speed"), [*AURORA, oceans["speed"]]),
     ("nyx-aurora-ocean-still-sky", "Nyx · Aurora Ocean (still sky)", sky("balanced"),
